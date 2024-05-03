@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'message_widget.dart';
 
@@ -128,7 +131,8 @@ class _ChatWidgetState extends State<ChatWidget> {
                 IconButton(
                   onPressed: !_loading
                       ? () async {
-                     _sendImagePrompt(_textController.text);
+                    _pickAndSendImage(_textController.text);
+                     // _sendImagePrompt(_textController.text);
                   }
                       : null,
                   icon: Icon(
@@ -265,6 +269,70 @@ class _ChatWidgetState extends State<ChatWidget> {
       _textController.clear();
       setState(() {
         _loading = false;
+      });
+      _textFieldFocus.requestFocus();
+    }
+  }
+
+  Future<List<DataPart>> _getImageDataParts(List<XFile> images) async {
+    var imageBytes = await Future.wait(
+      images.map((image) async {
+        var bytes = await image.readAsBytes();
+        return DataPart('image/jpeg', bytes);
+      }),
+    );
+    return imageBytes;
+  }
+
+  Future<void> _pickAndSendImage(String message) async {
+    final ImagePicker picker = ImagePicker();
+    List<XFile>? images = await picker.pickMultiImage();
+
+    if (images.isEmpty) {
+      return; // No image selected
+    }
+
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      List<DataPart> imageDataParts = await _getImageDataParts(images); // Fetch image data parts asynchronously
+
+      final content = Content.multi([
+        TextPart(message),
+        ...imageDataParts,
+      ]);
+
+      // Assuming you add the images to your local state for display
+      for (var image in images) {
+        File file = File(image.path);
+        _generatedContent.add(ContentEntry(
+            image: Image.file(file),
+            text: message,
+            fromUser: true
+        ));
+      }
+
+      var response = await _visionModel.generateContent([content]);
+      var text = response.text;
+      _generatedContent.add(ContentEntry(image: null, text: text, fromUser: false));
+
+      if (text == null) {
+        _showError('No response from API.');
+        return;
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
+      setState(() {
+        _loading = false;
+      });
+      _showError(e.toString());
+    } finally {
+      _textController.clear();
+      setState(() {
+        _loading = false;
+        _scrollDown();
       });
       _textFieldFocus.requestFocus();
     }
