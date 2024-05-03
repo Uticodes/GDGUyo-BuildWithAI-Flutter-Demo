@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
@@ -127,7 +128,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                 IconButton(
                   onPressed: !_loading
                       ? () async {
-                    ///todo 3 _sendImagePrompt(_textController.text);
+                     _sendImagePrompt(_textController.text);
                   }
                       : null,
                   icon: Icon(
@@ -213,6 +214,60 @@ class _ChatWidgetState extends State<ChatWidget> {
         );
       },
     );
+  }
+
+  Future<void> _sendImagePrompt(String message) async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      ByteData catBytes = await rootBundle.load('assets/images/cat.jpg');
+      ByteData sconeBytes = await rootBundle.load('assets/images/scones.jpg');
+      final content = [
+        Content.multi([
+          TextPart(message),
+          // The only accepted mime types are image/*.
+          DataPart('image/jpeg', catBytes.buffer.asUint8List()),
+          DataPart('image/jpeg', sconeBytes.buffer.asUint8List()),
+        ])
+      ];
+      _generatedContent.add(ContentEntry(
+        image: Image.asset("assets/images/cat.jpg"),
+        text: message,
+        fromUser: true,
+      ));
+
+      _generatedContent.add(ContentEntry(
+        image: Image.asset("assets/images/scones.jpg"),
+        text: null,
+        fromUser: true,
+      ));
+
+      var response = await _visionModel.generateContent(content);
+      var text = response.text;
+      _generatedContent.add(ContentEntry(image: null, text: text, fromUser: false));
+
+      if (text == null) {
+        _showError('No response from API.');
+        return;
+      } else {
+        setState(() {
+          _loading = false;
+          _scrollDown();
+        });
+      }
+    } catch (e) {
+      _showError(e.toString());
+      setState(() {
+        _loading = false;
+      });
+    } finally {
+      _textController.clear();
+      setState(() {
+        _loading = false;
+      });
+      _textFieldFocus.requestFocus();
+    }
   }
 
 }
