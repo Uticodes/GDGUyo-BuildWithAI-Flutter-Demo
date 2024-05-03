@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../utils/softkey_focus.dart';
 import 'message_widget.dart';
 
 class ChatWidget extends StatefulWidget {
@@ -120,7 +121,7 @@ class _ChatWidgetState extends State<ChatWidget> {
               children: [
                 Expanded(
                   child: TextField(
-                    autofocus: true,
+                    autofocus: false,
                     focusNode: _textFieldFocus,
                     decoration: textFieldDecoration,
                     controller: _textController,
@@ -163,6 +164,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   Future<void> _sendChatMessage(String message) async {
+    hideKeyboard(context);
     setState(() {
       _loading = true;
     });
@@ -199,6 +201,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   void _showError(String message) {
+    hideKeyboard(context);
     showDialog<void>(
       context: context,
       builder: (context) {
@@ -285,6 +288,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   Future<void> _pickAndSendImage(String message) async {
+    hideKeyboard(context);
     final ImagePicker picker = ImagePicker();
     List<XFile>? images = await picker.pickMultiImage();
 
@@ -334,7 +338,7 @@ class _ChatWidgetState extends State<ChatWidget> {
         _loading = false;
         _scrollDown();
       });
-      _textFieldFocus.requestFocus();
+      // _textFieldFocus.requestFocus();
     }
   }
 
