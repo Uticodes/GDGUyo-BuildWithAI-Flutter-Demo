@@ -120,9 +120,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                     focusNode: _textFieldFocus,
                     decoration: textFieldDecoration,
                     controller: _textController,
-                    onSubmitted: (value) {
-                      /// todo 2 _sendChatMessage
-                    },
+                    onSubmitted: _sendChatMessage,
                   ),
                 ),
                 const SizedBox.square(dimension: 15),
@@ -142,7 +140,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                 if (!_loading)
                   IconButton(
                     onPressed: () async {
-                      /// todo 1 _sendChatMessage(_textController.text);
+                      _sendChatMessage(_textController.text);
                     },
                     icon: Icon(
                       Icons.send,
@@ -156,6 +154,64 @@ class _ChatWidgetState extends State<ChatWidget> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _sendChatMessage(String message) async {
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      _generatedContent.add(ContentEntry(image: null, text: message, fromUser: true));
+      final response = await _chat.sendMessage(
+        Content.text(message),
+      );
+      final text = response.text;
+      _generatedContent.add(ContentEntry(image: null, text: text, fromUser: false));
+
+      if (text == null) {
+        _showError('No response from API.');
+        return;
+      } else {
+        setState(() {
+          _loading = false;
+          _scrollDown();
+        });
+      }
+    } catch (e) {
+      _showError(e.toString());
+      setState(() {
+        _loading = false;
+      });
+    } finally {
+      _textController.clear();
+      setState(() {
+        _loading = false;
+      });
+      _textFieldFocus.requestFocus();
+    }
+  }
+
+  void _showError(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Something went wrong'),
+          content: SingleChildScrollView(
+            child: SelectableText(message),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            )
+          ],
+        );
+      },
     );
   }
 
