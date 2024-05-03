@@ -121,7 +121,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                     decoration: textFieldDecoration,
                     controller: _textController,
                     onSubmitted: (value) {
-                      /// todo _sendChatMessage
+                      /// todo 2 _sendChatMessage
                     },
                   ),
                 ),
@@ -129,7 +129,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                 IconButton(
                   onPressed: !_loading
                       ? () async {
-                    ///todo _sendImagePrompt(_textController.text);
+                    ///todo 3 _sendImagePrompt(_textController.text);
                   }
                       : null,
                   icon: Icon(
@@ -142,7 +142,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                 if (!_loading)
                   IconButton(
                     onPressed: () async {
-                      /// todo _sendChatMessage(_textController.text);
+                      /// todo 1 _sendChatMessage(_textController.text);
                     },
                     icon: Icon(
                       Icons.send,
